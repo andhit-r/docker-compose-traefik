@@ -5,18 +5,23 @@ services:
     container_name: traefik
     restart: always
 
+    # Perintah custom: pastikan acme.json aman sebelum Traefik jalan
     command:
-      - "--configFile=/etc/traefik/traefik.yml"  # Path ke file konfigurasi statis
+      - /bin/sh
+      - -c
+      - |
+        touch /acme.json && chmod 600 /acme.json
+        traefik --configFile=/etc/traefik/traefik.yml
 
     ports:
       - "80:80"    # HTTP (lokal atau redirect ke HTTPS)
       - "443:443"  # HTTPS (production)
 
     volumes:
-      - "./traefik.yml:/etc/traefik/traefik.yml:ro"  # Konfigurasi statis
-      - "./conf:/etc/traefik/conf:ro"               # Untuk usersfile (production)
+      - "./traefik.yml:/etc/traefik/traefik.yml:ro"     # Konfigurasi statis
+      - "./conf:/etc/traefik/conf:ro"                   # Untuk usersfile (production)
       - "/var/run/docker.sock:/var/run/docker.sock:ro"  # Monitoring Docker container
-      - "traefik_acme:/acme.json"                   # Volume internal untuk sertifikat
+      - "traefik_acme:/acme.json"                       # Volume internal untuk sertifikat TLS
 
     networks:
       - traefik-public
