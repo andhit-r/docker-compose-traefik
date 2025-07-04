@@ -1,18 +1,18 @@
-# Konfigurasi tambahan khusus untuk environment production
+# Konfigurasi tambahan untuk environment production
 services:
   traefik:
     labels:
-      - "traefik.enable=true"                                   # Aktifkan Traefik untuk container ini
+      - "traefik.enable=true"  # Aktifkan Traefik untuk container ini
 
-      # Router untuk dashboard production (HTTPS via Let's Encrypt)
+      # Dashboard di production, menggunakan HTTPS
       - "traefik.http.routers.traefik.rule=Host(`traefik.toyscation.id`)"
-      - "traefik.http.routers.traefik.entrypoints=websecure"   # Gunakan entrypoint HTTPS
-      - "traefik.http.routers.traefik.tls=true"                # Aktifkan TLS
-      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"  # Gunakan Let's Encrypt resolver
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
 
-      # Middleware untuk Basic Auth
-      - "traefik.http.routers.traefik.middlewares=auth"        # Tambahkan middleware auth
-      - "traefik.http.middlewares.auth.basicauth.usersfile=/conf/usersfile"  # File usersfile berisi user:hashed_password
+      # Tambahkan basic auth
+      - "traefik.http.routers.traefik.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.usersfile=/etc/traefik/conf/usersfile"
 
-      # Gunakan dashboard bawaan Traefik
+      # Gunakan service internal untuk dashboard
       - "traefik.http.routers.traefik.service=api@internal"

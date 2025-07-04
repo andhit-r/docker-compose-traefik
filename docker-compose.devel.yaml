@@ -1,16 +1,10 @@
-# File untuk konfigurasi saat pengembangan (lokal)
-version: "3.8"
-
+# Konfigurasi tambahan untuk environment lokal (development)
 services:
   traefik:
     labels:
-      - "traefik.enable=true"  # Aktifkan Traefik untuk container ini
+      - "traefik.enable=true"  # Aktifkan routing untuk container ini
 
-      # Router untuk dashboard lokal (diakses via traefik.localhost)
-      - "traefik.http.routers.traefik-localhost.rule=Host(`traefik.localhost`)"
-      - "traefik.http.routers.traefik-localhost.entrypoints=web"  # Gunakan entrypoint HTTP
-      - "traefik.http.routers.traefik-localhost.service=api@internal"  # Gunakan dashboard internal Traefik
-
-# Volume ini harus dideklarasikan agar konsisten dengan common.yaml
-volumes:
-  traefik_acme:
+      # Dashboard lokal via HTTP
+      - "traefik.http.routers.traefik.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.traefik.entrypoints=web"  # Gunakan HTTP (port 80)
+      - "traefik.http.routers.traefik.service=api@internal"  # Dashboard bawaan Traefik

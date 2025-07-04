@@ -1,33 +1,29 @@
-# Konfigurasi umum yang digunakan oleh environment development dan production
-version: "3.8"
-
+# Konfigurasi umum untuk lokal & production
 services:
   traefik:
-    image: traefik:v2.11                      # Gambar Traefik versi stabil
-    container_name: traefik                  # Nama container
-    restart: always                          # Restart otomatis jika gagal
+    image: traefik:v2.11
+    container_name: traefik
+    restart: always
 
     command:
-      - --configFile=/traefik.yml            # Gunakan file konfigurasi statis utama
+      - "--configFile=/etc/traefik/traefik.yml"  # Path ke file konfigurasi statis
 
     ports:
-      - "80:80"                              # Buka port HTTP
-      - "443:443"                            # Buka port HTTPS
+      - "80:80"    # HTTP (lokal atau redirect ke HTTPS)
+      - "443:443"  # HTTPS (production)
 
     volumes:
-      - ./traefik.yml:/traefik.yml:ro        # Mount file konfigurasi statis
-      - ./conf:/conf:ro                      # Mount folder berisi file usersfile untuk Basic Auth
-      - /var/run/docker.sock:/var/run/docker.sock:ro  # Izinkan Traefik membaca metadata container lain
-      - traefik_acme:/acme.json              # Volume untuk menyimpan data Let's Encrypt (acme.json)
+      - "./traefik.yml:/etc/traefik/traefik.yml:ro"  # Konfigurasi statis
+      - "./conf:/etc/traefik/conf:ro"               # Untuk usersfile (production)
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"  # Monitoring Docker container
+      - "traefik_acme:/acme.json"                   # Volume internal untuk sertifikat
 
     networks:
-      - traefik-public                       # Network internal untuk semua service yang diatur Traefik
+      - traefik-public
 
-# Deklarasi jaringan internal
 networks:
   traefik-public:
-    name: traefik-public                     # Nama jaringan harus konsisten
+    name: traefik-public  # Agar konsisten antar file
 
-# Volume untuk menyimpan file acme.json secara internal (otomatis oleh Docker)
 volumes:
-  traefik_acme:
+  traefik_acme:  # Volume internal untuk menyimpan sertifikat TLS
