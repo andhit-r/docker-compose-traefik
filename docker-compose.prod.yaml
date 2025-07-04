@@ -30,7 +30,7 @@ services:
 
 networks:
   traefik-public:
-    external: true  # Sudah didefinisikan di docker-compose.common.yaml
+    name: traefik-public    
 
 volumes:
   traefik_acme:
