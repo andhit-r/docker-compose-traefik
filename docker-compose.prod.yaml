@@ -1,26 +1,30 @@
+# File untuk konfigurasi produksi
 version: "3.8"
 
 services:
   traefik:
-    ports:
-      - "80:80"
-      - "443:443"
     labels:
       - "traefik.enable=true"
 
-      - "traefik.http.routers.traefik.rule=Host(`traefik.toyscation.id`)"
-      - "traefik.http.routers.traefik.entrypoints=websecure"
-      - "traefik.http.routers.traefik.tls=true"
-      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.traefik.service=api@internal"
-      - "traefik.http.routers.traefik.middlewares=auth"
+      # Router untuk dashboard di production (HTTPS)
+      - "traefik.http.routers.traefik-prod.rule=Host(`traefik.toyscation.id`)"
+      - "traefik.http.routers.traefik-prod.entrypoints=websecure"
+      - "traefik.http.routers.traefik-prod.tls=true"
+      - "traefik.http.routers.traefik-prod.service=api@internal"
+      - "traefik.http.routers.traefik-prod.middlewares=auth"
 
+      # Middleware untuk basic auth
       - "traefik.http.middlewares.auth.basicauth.usersfile=/etc/traefik/conf/usersfile"
 
-      - "traefik.http.routers.http-catchall.rule=Host(`traefik.toyscation.id`)"
-      - "traefik.http.routers.http-catchall.entrypoints=web"
-      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
-      - "traefik.http.routers.http-catchall.priority=1"
-      - "traefik.http.routers.http-catchall.service=noop@internal"
+      # TLS configuration
+      - "traefik.http.routers.traefik-prod.tls.certresolver=letsencrypt"
 
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+    environment:
+      - TZ=Asia/Jakarta
+
+    volumes:
+      - "./letsencrypt:/letsencrypt"  # Gunakan direktori yang sama di semua environment
+
+    # Tambahkan network jika Anda ingin menghubungkan layanan lain seperti pgadmin
+    networks:
+      - traefik-public

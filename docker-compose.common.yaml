@@ -1,13 +1,27 @@
+# Komposisi umum yang digunakan oleh baik lokal maupun production
 version: "3.8"
 
 services:
   traefik:
     image: traefik:v2.11
-    restart: unless-stopped
+    container_name: traefik
+    restart: always
     command:
-      - --configFile=/etc/traefik/traefik.yml
+      - "--configFile=/etc/traefik/traefik.yml"  # Gunakan file konfigurasi statis
+
+    ports:
+      - "80:80"      # HTTP
+      - "443:443"    # HTTPS
+
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./traefik.yml:/etc/traefik/traefik.yml
-      - ./conf:/etc/traefik/conf
-      - ./acme.json:/etc/traefik/acme.json
+      - "./traefik.yml:/etc/traefik/traefik.yml:ro"                # Konfigurasi statis
+      - "./conf:/etc/traefik/conf:ro"                              # Userfile untuk basic auth
+      - "./letsencrypt:/letsencrypt"                               # Penyimpanan SSL
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"             # Akses container Docker lain
+
+    networks:
+      - traefik-public  # Jaringan yang digunakan oleh semua layanan di belakang Traefik
+
+networks:
+  traefik-public:
+    driver: bridge

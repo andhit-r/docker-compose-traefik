@@ -1,12 +1,12 @@
+# File untuk konfigurasi saat pengembangan (lokal)
 version: "3.8"
 
 services:
   traefik:
-    ports:
-      - "80:80"
-      - "443:443"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.localhost`)"
-      - "traefik.http.routers.traefik.entrypoints=web"
-      - "traefik.http.routers.traefik.service=api@internal"
+
+      # Router untuk dashboard di lokal (traefik.localhost)
+      - "traefik.http.routers.traefik-localhost.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.traefik-localhost.entrypoints=web"
+      - "traefik.http.routers.traefik-localhost.service=api@internal"
