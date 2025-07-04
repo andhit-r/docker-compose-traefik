@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  traefik:
+    image: traefik:v2.11
+    restart: unless-stopped
+    command:
+      - --configFile=/etc/traefik/traefik.yml
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik.yml:/etc/traefik/traefik.yml
+      - ./conf:/etc/traefik/conf
+      - ./acme.json:/etc/traefik/acme.json

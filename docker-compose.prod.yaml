@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  traefik:
+    ports:
+      - "80:80"
+      - "443:443"
+    labels:
+      - "traefik.enable=true"
+
+      - "traefik.http.routers.traefik.rule=Host(`traefik.toyscation.id`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.middlewares=auth"
+
+      - "traefik.http.middlewares.auth.basicauth.usersfile=/etc/traefik/conf/usersfile"
+
+      - "traefik.http.routers.http-catchall.rule=Host(`traefik.toyscation.id`)"
+      - "traefik.http.routers.http-catchall.entrypoints=web"
+      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
+      - "traefik.http.routers.http-catchall.priority=1"
+      - "traefik.http.routers.http-catchall.service=noop@internal"
+
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
