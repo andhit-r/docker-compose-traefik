@@ -1,22 +1,26 @@
-# Konfigurasi statis utama Traefik
+# File konfigurasi statis Traefik (dibaca saat startup)
 
 entryPoints:
   web:
     address: ":80"
-
   websecure:
     address: ":443"
 
-api:
-  dashboard: true  # Aktifkan dashboard internal
-
 providers:
   docker:
-    exposedByDefault: false  # Hanya container dengan traefik.enable=true yang dilayani
+    exposedByDefault: false  # Hanya container dengan label traefik.enable=true
 
 certificatesResolvers:
   letsencrypt:
     acme:
       email: odoo@simetri-sinergi.id
-      storage: /acme.json  # Lokasi tempat sertifikat disimpan (pakai volume internal)
-      tlsChallenge: true
+      storage: /acme.json
+      httpChallenge:
+        entryPoint: web  # Let's Encrypt akan verifikasi via HTTP di port 80
+
+api:
+  dashboard: true     # Aktifkan dashboard
+  insecure: false     # Nonaktifkan akses tanpa router
+
+log:
+  level: DEBUG         # Untuk debugging konfigurasi

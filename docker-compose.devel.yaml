@@ -4,7 +4,7 @@ services:
     labels:
       - "traefik.enable=true"  # Aktifkan routing untuk container ini
 
-      # Dashboard lokal via HTTP
-      - "traefik.http.routers.traefik.rule=Host(`traefik.localhost`)"
-      - "traefik.http.routers.traefik.entrypoints=web"  # Gunakan HTTP (port 80)
-      - "traefik.http.routers.traefik.service=api@internal"  # Dashboard bawaan Traefik
+      # Router khusus dashboard di lokal
+      - "traefik.http.routers.traefik-local.rule=Host(`traefik.localhost`)"  # Dashboard via domain lokal
+      - "traefik.http.routers.traefik-local.entrypoints=web"  # Gunakan entrypoint HTTP
+      - "traefik.http.routers.traefik-local.service=api@internal"  # Gunakan service internal untuk dashboard

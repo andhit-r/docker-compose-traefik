@@ -4,15 +4,15 @@ services:
     labels:
       - "traefik.enable=true"  # Aktifkan Traefik untuk container ini
 
-      # Dashboard di production, menggunakan HTTPS
-      - "traefik.http.routers.traefik.rule=Host(`traefik.toyscation.id`)"
-      - "traefik.http.routers.traefik.entrypoints=websecure"
-      - "traefik.http.routers.traefik.tls=true"
-      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      # Router unik untuk dashboard production
+      - "traefik.http.routers.traefik-prod.rule=Host(`traefik.toyscation.id`)"
+      - "traefik.http.routers.traefik-prod.entrypoints=websecure"
+      - "traefik.http.routers.traefik-prod.tls=true"
+      - "traefik.http.routers.traefik-prod.tls.certresolver=letsencrypt"
 
-      # Tambahkan basic auth
-      - "traefik.http.routers.traefik.middlewares=auth"
+      # Basic Auth Middleware
+      - "traefik.http.routers.traefik-prod.middlewares=auth"
       - "traefik.http.middlewares.auth.basicauth.usersfile=/etc/traefik/conf/usersfile"
 
-      # Gunakan service internal untuk dashboard
-      - "traefik.http.routers.traefik.service=api@internal"
+      # Dashboard bawaan Traefik
+      - "traefik.http.routers.traefik-prod.service=api@internal"
