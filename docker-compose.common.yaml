@@ -24,4 +24,5 @@ services:
 
 networks:
   traefik-public:
-    driver: bridge
+    name: traefik-public  # Tetap beri nama supaya konsisten antar project
+    driver: bridge        # Gunakan driver default Docker
