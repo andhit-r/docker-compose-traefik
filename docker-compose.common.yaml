@@ -18,7 +18,7 @@ services:
       - "./traefik.yml:/etc/traefik/traefik.yml:ro"
       - "./conf:/etc/traefik/conf:ro"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "traefik_acme:/acme.json"
+      - "./acme.json:/acme.json"
 
     networks:
       - traefik-public
@@ -26,6 +26,3 @@ services:
 networks:
   traefik-public:
     name: traefik-public
-
-volumes:
-  traefik_acme:
