@@ -1,28 +1,33 @@
-# Komposisi umum yang digunakan oleh baik lokal maupun production
+# Konfigurasi umum yang digunakan oleh environment development dan production
 version: "3.8"
 
 services:
   traefik:
-    image: traefik:v2.11
-    container_name: traefik
-    restart: always
+    image: traefik:v2.11                      # Gambar Traefik versi stabil
+    container_name: traefik                  # Nama container
+    restart: always                          # Restart otomatis jika gagal
+
     command:
-      - "--configFile=/etc/traefik/traefik.yml"  # Gunakan file konfigurasi statis
+      - --configFile=/traefik.yml            # Gunakan file konfigurasi statis utama
 
     ports:
-      - "80:80"      # HTTP
-      - "443:443"    # HTTPS
+      - "80:80"                              # Buka port HTTP
+      - "443:443"                            # Buka port HTTPS
 
     volumes:
-      - "./traefik.yml:/etc/traefik/traefik.yml:ro"                # Konfigurasi statis
-      - "./conf:/etc/traefik/conf:ro"                              # Userfile untuk basic auth
-      - "./letsencrypt:/letsencrypt"                               # Penyimpanan SSL
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"             # Akses container Docker lain
+      - ./traefik.yml:/traefik.yml:ro        # Mount file konfigurasi statis
+      - ./conf:/conf:ro                      # Mount folder berisi file usersfile untuk Basic Auth
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # Izinkan Traefik membaca metadata container lain
+      - traefik_acme:/acme.json              # Volume untuk menyimpan data Let's Encrypt (acme.json)
 
     networks:
-      - traefik-public  # Jaringan yang digunakan oleh semua layanan di belakang Traefik
+      - traefik-public                       # Network internal untuk semua service yang diatur Traefik
 
+# Deklarasi jaringan internal
 networks:
   traefik-public:
-    name: traefik-public  # Tetap beri nama supaya konsisten antar project
-    driver: bridge        # Gunakan driver default Docker
+    name: traefik-public                     # Nama jaringan harus konsisten
+
+# Volume untuk menyimpan file acme.json secara internal (otomatis oleh Docker)
+volumes:
+  traefik_acme:

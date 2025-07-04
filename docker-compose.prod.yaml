@@ -1,38 +1,18 @@
-version: "3.8"
-
+# Konfigurasi tambahan khusus untuk environment production
 services:
   traefik:
-    image: traefik:v2.11
-    container_name: traefik
-    restart: always
+    labels:
+      - "traefik.enable=true"                                   # Aktifkan Traefik untuk container ini
 
-    command:
-      # Menentukan file konfigurasi utama
-      - --configFile=/traefik.yml
+      # Router untuk dashboard production (HTTPS via Let's Encrypt)
+      - "traefik.http.routers.traefik.rule=Host(`traefik.toyscation.id`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"   # Gunakan entrypoint HTTPS
+      - "traefik.http.routers.traefik.tls=true"                # Aktifkan TLS
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"  # Gunakan Let's Encrypt resolver
 
-    ports:
-      # Buka port HTTP dan HTTPS di host
-      - 80:80
-      - 443:443
+      # Middleware untuk Basic Auth
+      - "traefik.http.routers.traefik.middlewares=auth"        # Tambahkan middleware auth
+      - "traefik.http.middlewares.auth.basicauth.usersfile=/conf/usersfile"  # File usersfile berisi user:hashed_password
 
-    volumes:
-      # Mount file konfigurasi utama Traefik
-      - ./traefik.yml:/traefik.yml:ro
-      # Mount direktori berisi file otentikasi dashboard
-      - ./conf:/conf:ro
-      # Mount Docker socket agar Traefik bisa baca label container lain
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      # Mount volume untuk menyimpan data sertifikat Let's Encrypt
-      - traefik_acme:/acme.json
-
-    networks:
-      - traefik-public
-
-networks:
-  traefik-public:
-    name: traefik-public    
-
-volumes:
-  traefik_acme:
-    # Volume ini menyimpan acme.json secara internal oleh Docker
-    # Tidak perlu file fisik di host
+      # Gunakan dashboard bawaan Traefik
+      - "traefik.http.routers.traefik.service=api@internal"

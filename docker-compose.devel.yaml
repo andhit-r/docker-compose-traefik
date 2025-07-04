@@ -4,12 +4,13 @@ version: "3.8"
 services:
   traefik:
     labels:
-      - "traefik.enable=true"
+      - "traefik.enable=true"  # Aktifkan Traefik untuk container ini
 
-      # Router untuk dashboard di lokal (traefik.localhost)
+      # Router untuk dashboard lokal (diakses via traefik.localhost)
       - "traefik.http.routers.traefik-localhost.rule=Host(`traefik.localhost`)"
-      - "traefik.http.routers.traefik-localhost.entrypoints=web"
-      - "traefik.http.routers.traefik-localhost.service=api@internal"
+      - "traefik.http.routers.traefik-localhost.entrypoints=web"  # Gunakan entrypoint HTTP
+      - "traefik.http.routers.traefik-localhost.service=api@internal"  # Gunakan dashboard internal Traefik
 
+# Volume ini harus dideklarasikan agar konsisten dengan common.yaml
 volumes:
-  traefik_acme:      
+  traefik_acme:
