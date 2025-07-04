@@ -10,3 +10,6 @@ services:
       - "traefik.http.routers.traefik-localhost.rule=Host(`traefik.localhost`)"
       - "traefik.http.routers.traefik-localhost.entrypoints=web"
       - "traefik.http.routers.traefik-localhost.service=api@internal"
+
+volumes:
+  traefik_acme:      
