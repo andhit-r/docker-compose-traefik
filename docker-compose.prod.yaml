@@ -1,18 +1,21 @@
 # Konfigurasi tambahan untuk environment production
 services:
   traefik:
+    env_file:
+      - .env
     labels:
       - "traefik.enable=true"  # Aktifkan Traefik untuk container ini
 
       # Router unik untuk dashboard production
-      - "traefik.http.routers.traefik-prod.rule=Host(`traefik.toyscation.id`)"
+      - "traefik.http.routers.traefik-prod.rule=Host(`${TRAEFIK_DASHBOARD_HOST_PROD}`)"
       - "traefik.http.routers.traefik-prod.entrypoints=websecure"
       - "traefik.http.routers.traefik-prod.tls=true"
       - "traefik.http.routers.traefik-prod.tls.certresolver=letsencrypt"
 
       # Basic Auth Middleware
       - "traefik.http.routers.traefik-prod.middlewares=auth"
-      - "traefik.http.middlewares.auth.basicauth.usersfile=/etc/traefik/conf/usersfile"
+      - "traefik.http.middlewares.auth.basicauth.usersfile=/etc/traefik/usersfile"
 
       # Dashboard bawaan Traefik
       - "traefik.http.routers.traefik-prod.service=api@internal"
+      - traefik.docker.network=traefik-public

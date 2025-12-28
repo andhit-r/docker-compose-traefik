@@ -1,10 +1,13 @@
 # Konfigurasi tambahan untuk environment lokal (development)
 services:
   traefik:
+    env_file:
+      - .env
     labels:
       - "traefik.enable=true"  # Aktifkan routing untuk container ini
 
       # Router khusus dashboard di lokal
-      - "traefik.http.routers.traefik-local.rule=Host(`traefik.localhost`)"  # Dashboard via domain lokal
+      - "traefik.http.routers.traefik-local.rule=Host(`${TRAEFIK_DASHBOARD_HOST_DEVEL}`)"  # Dashboard via domain lokal
       - "traefik.http.routers.traefik-local.entrypoints=web"  # Gunakan entrypoint HTTP
       - "traefik.http.routers.traefik-local.service=api@internal"  # Gunakan service internal untuk dashboard
+      - traefik.docker.network=traefik-public

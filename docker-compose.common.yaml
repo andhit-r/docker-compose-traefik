@@ -4,21 +4,28 @@ services:
     container_name: traefik
     restart: always
 
+    # Jalankan Traefik langsung dengan file config (ENTRYPOINT image sudah "traefik")
     command:
-      - "--configFile=/etc/traefik/traefik.yml"
-      - "/bin/sh"
-      - "-c"
-      - "touch /acme.json && chmod 600 /acme.json && traefik"
+      - --configFile=/etc/traefik/traefik.yml
+
+    environment:
+      - TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL=${TRAEFIK_ACME_EMAIL}
 
     ports:
       - "80:80"
       - "443:443"
 
     volumes:
-      - "./traefik.yml:/etc/traefik/traefik.yml:ro"
-      - "./conf:/etc/traefik/conf:ro"
+      # File config utama
+      - "./traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
+      # Dynamic config (middleware, dsb.)
+      - "./traefik/dynamic:/etc/traefik/dynamic:ro"
+      # Basic-auth usersfile (disimpan di direktori data)
+      - "./data/usersfile:/etc/traefik/usersfile:ro"
+      # Provider docker
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./acme.json:/acme.json"
+      # ACME storage (HARUS file, mode 600)
+      - "./data/acme.json:/etc/traefik/acme.json"
 
     networks:
       - traefik-public

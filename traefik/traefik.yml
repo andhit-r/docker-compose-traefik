@@ -21,7 +21,7 @@ certificatesResolvers:
   letsencrypt:
     acme:
       email: odoo@simetri-sinergi.id
-      storage: /acme.json
+      storage: /etc/traefik/acme.json
       keyType: RSA4096
       httpChallenge:
         entryPoint: web
