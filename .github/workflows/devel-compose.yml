@@ -28,6 +28,9 @@ jobs:
       - name: Start Traefik (devel)
         run: docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml up -d
 
+      - name: Map traefik.localhost
+        run: echo "127.0.0.1 traefik.localhost" | sudo tee -a /etc/hosts
+
       - name: Smoke test dashboard endpoint
         run: |
           docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml ps
