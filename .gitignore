@@ -5,6 +5,7 @@ acme.json
 # Environment files
 *.env
 .env.*
+!.env
 
 # Logs
 *.log
