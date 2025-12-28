@@ -34,8 +34,17 @@ jobs:
       - name: Smoke test dashboard endpoint
         run: |
           docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml ps
-          curl --retry 5 --retry-delay 3 -sSf -H "Host: traefik.localhost" http://127.0.0.1/api/rawdata > /tmp/traefik-api.json
-          test -s /tmp/traefik-api.json
+          for attempt in {1..10}; do
+            if curl -sSf -H "Host: traefik.localhost" http://127.0.0.1/api/rawdata > /tmp/traefik-api.json; then
+              test -s /tmp/traefik-api.json
+              exit 0
+            fi
+            echo "Traefik not ready yet (attempt ${attempt}/10). Retrying in 3s..."
+            sleep 3
+          done
+          echo "Traefik dashboard endpoint still returning errors after retries" >&2
+          docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml logs traefik >&2
+          exit 1
 
       - name: Collect logs on failure
         if: failure()
