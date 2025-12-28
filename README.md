@@ -1,6 +1,6 @@
 # Traefik Docker Compose Setup
 
-[![Devel Compose](https://github.com/andhit-r/traefik-toyscation/actions/workflows/devel-compose.yml/badge.svg?branch=master)](https://github.com/andhit-r/traefik-toyscation/actions/workflows/devel-compose.yml)
+![test-devel](https://github.com/andhit-r/docker-compose-traefik/actions/workflows/devel-compose.yml/badge.svg)
 
 Proyek ini berisi konfigurasi Docker Compose untuk menjalankan Traefik sebagai *reverse proxy*. Pengaturan ini dipisahkan untuk lingkungan pengembangan (development) dan produksi (production) guna mengoptimalkan alur kerja dan keamanan.
 
