@@ -1,0 +1,43 @@
+name: devel-compose
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify-deployment:
+    name: Validate devel docker-compose
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare ACME storage
+        run: |
+          mkdir -p data
+          rm -rf data/acme.json
+          touch data/acme.json
+          chmod 600 data/acme.json
+
+      - name: Render compose config
+        run: docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml config
+
+      - name: Start Traefik (devel)
+        run: docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml up -d
+
+      - name: Smoke test dashboard endpoint
+        run: |
+          docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml ps
+          curl --retry 5 --retry-delay 3 -sSf -H "Host: traefik.localhost" http://127.0.0.1/api/rawdata > /tmp/traefik-api.json
+          test -s /tmp/traefik-api.json
+
+      - name: Collect logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml logs traefik
+
+      - name: Shutdown stack
+        if: always()
+        run: docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml down -v --remove-orphans
