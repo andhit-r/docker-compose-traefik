@@ -1,0 +1,41 @@
+# Files yang tidak perlu di-copy ke project baru
+
+# Git files
+.git/
+.github/
+
+# Data directory - akan dibuat oleh setup.sh
+data/
+letsencrypt/
+
+# Documentation yang hanya untuk template developer
+TEMPLATE.md
+
+# Files yang sudah generated (akan di-generate ulang)
+docker-compose.common.yaml
+traefik/traefik.yml
+.env
+.copier-answers.yml
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,23 @@
+# Example answers file untuk Copier
+# Gunakan file ini untuk non-interactive setup
+
+# Basic project info
+project_name: my-traefik-proxy
+
+# Dashboard domains
+traefik_dashboard_host_devel: traefik.localhost
+traefik_dashboard_host_prod: traefik.example.com
+
+# ACME / Let's Encrypt
+traefik_acme_email: admin@example.com
+
+# Traefik version
+traefik_version: v2.11
+
+# Basic Auth configuration
+create_auth_user: true
+auth_username: admin
+auth_password: changeme123
+
+# Logging
+log_level: INFO

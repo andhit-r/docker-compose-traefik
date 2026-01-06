@@ -1,0 +1,82 @@
+# Copier template configuration untuk Traefik Docker Compose Setup
+_min_copier_version: "9.0.0"
+
+# Template metadata
+_subdirectory: .
+_templates_suffix: .jinja
+
+# Exclude files yang tidak perlu di-copy
+_exclude:
+  - copier.yml
+  - .git
+  - .github
+  - "*.pyc"
+  - __pycache__
+  - .DS_Store
+  - .copier-answers.yml
+
+# Pertanyaan untuk pengguna
+project_name:
+  type: str
+  help: "Nama project Traefik Anda"
+  default: "traefik-proxy"
+
+traefik_dashboard_host_devel:
+  type: str
+  help: "Domain/hostname untuk dashboard Traefik di environment development"
+  default: "traefik.localhost"
+  validator: "{% if not traefik_dashboard_host_devel %}Required{% endif %}"
+
+traefik_dashboard_host_prod:
+  type: str
+  help: "Domain untuk dashboard Traefik di environment production"
+  default: "traefik.example.com"
+  validator: "{% if not traefik_dashboard_host_prod %}Required{% endif %}"
+
+traefik_acme_email:
+  type: str
+  help: "Email untuk registrasi Let's Encrypt (ACME)"
+  default: "admin@example.com"
+  validator: >-
+    {% if '@' not in traefik_acme_email %}
+    Email harus valid
+    {% endif %}
+
+traefik_version:
+  type: str
+  help: "Versi Traefik yang akan digunakan"
+  default: "v2.11"
+
+create_auth_user:
+  type: bool
+  help: "Apakah Anda ingin membuat basic auth user untuk production?"
+  default: true
+
+auth_username:
+  type: str
+  help: "Username untuk basic auth (production)"
+  default: "admin"
+  when: "{{ create_auth_user }}"
+
+auth_password:
+  type: str
+  help: "Password untuk basic auth (production)"
+  default: ""
+  secret: true
+  when: "{{ create_auth_user }}"
+  validator: "{% if create_auth_user and not auth_password %}Required when creating auth user{% endif %}"
+
+log_level:
+  type: str
+  help: "Level logging untuk Traefik"
+  default: "INFO"
+  choices:
+    - "DEBUG"
+    - "INFO"
+    - "WARN"
+    - "ERROR"
+
+# Task yang akan dijalankan setelah template di-generate
+_tasks:
+  - "chmod +x setup.sh"
+  - "./setup.sh"

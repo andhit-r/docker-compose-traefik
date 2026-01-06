@@ -1,0 +1,124 @@
+# {{ project_name }}
+
+![test-devel](https://github.com/andhit-r/docker-compose-traefik/actions/workflows/devel-compose.yml/badge.svg)
+
+Proyek ini berisi konfigurasi Docker Compose untuk menjalankan Traefik sebagai *reverse proxy*. Pengaturan ini dipisahkan untuk lingkungan pengembangan (development) dan produksi (production) guna mengoptimalkan alur kerja dan keamanan.
+
+> **📝 Note:** Proyek ini dibuat menggunakan [Copier](https://copier.readthedocs.io/) template. Untuk update konfigurasi, jalankan `copier update` atau edit `.copier-answers.yml`.
+
+## Prasyarat
+
+- Docker
+- Docker Compose
+
+## Struktur Proyek
+
+- `docker-compose.common.yaml`: Berisi konfigurasi dasar yang digunakan bersama oleh lingkungan development dan production.
+- `docker-compose.devel.yaml`: Konfigurasi khusus untuk lingkungan **development**. Mengaktifkan dashboard Traefik yang tidak aman (`insecure`) untuk kemudahan akses dan debugging.
+- `docker-compose.prod.yaml`: Konfigurasi khusus untuk lingkungan **produksi**. Mencakup pengaturan keamanan, HTTPS otomatis melalui Let's Encrypt, dan otentikasi untuk dashboard.
+- `traefik/traefik.yml`: File konfigurasi statis utama untuk Traefik, terutama digunakan di lingkungan produksi.
+- `traefik/dynamic/`: Direktori untuk file konfigurasi dinamis Traefik (misalnya, middleware, router, dll).
+- `.env`: Variabel lingkungan bersama; memuat host dashboard untuk environment development dan production serta email ACME Let's Encrypt.
+- `acme.json`: File untuk menyimpan sertifikat SSL/TLS dari Let's Encrypt. **Penting**: Pastikan hak akses file ini adalah `600`.
+- `usersfile`: File untuk menyimpan kredensial otentikasi dasar (digunakan di produksi).
+
+## Konfigurasi `.env`
+
+File `.env` telah di-generate secara otomatis oleh Copier dengan nilai-nilai yang Anda berikan:
+
+- `TRAEFIK_DASHBOARD_HOST_DEVEL={{ traefik_dashboard_host_devel }}`: Domain untuk dashboard di lingkungan development
+- `TRAEFIK_DASHBOARD_HOST_PROD={{ traefik_dashboard_host_prod }}`: Domain dashboard di production
+- `TRAEFIK_ACME_EMAIL={{ traefik_acme_email }}`: Email untuk Let's Encrypt
+
+Anda bisa mengubah nilai-nilai ini di file `.env` atau dengan menjalankan `copier update` untuk re-konfigurasi.
+
+## Cara Menjalankan
+
+### Lingkungan Development
+
+Pengaturan ini dioptimalkan untuk pengujian lokal. Dashboard Traefik dapat diakses tanpa otentikasi.
+
+1.  **Jalankan services:**
+    ```bash
+    docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml up -d
+    ```
+
+2.  **Akses Dashboard:**
+    Dashboard Traefik tersedia di [http://{{ traefik_dashboard_host_devel }}](http://{{ traefik_dashboard_host_devel }}).
+
+### Lingkungan Produksi
+
+Pengaturan ini dioptimalkan untuk production dengan fokus pada keamanan.
+
+{% if create_auth_user %}**✅ Basic auth sudah dikonfigurasi**
+- Username: `{{ auth_username }}`
+- Password: (sudah di-set saat setup)
+
+File `data/usersfile` dan `data/acme.json` telah dibuat otomatis.
+{% else %}**⚠️  Basic auth belum dikonfigurasi**
+
+Anda perlu membuat file `data/usersfile` secara manual:
+```bash
+htpasswd -cb data/usersfile your_username your_password
+```
+{% endif %}
+
+**Menjalankan services:**
+
+1.  Gunakan perintah berikut untuk memulai container:
+    ```bash
+    docker compose -f docker-compose.common.yaml -f docker-compose.prod.yaml up -d
+    ```
+
+2.  **Akses Dashboard:**
+    Dashboard Traefik akan tersedia di [https://{{ traefik_dashboard_host_prod }}](https://{{ traefik_dashboard_host_prod }}){% if create_auth_user %}. Anda akan diminta login dengan username dan password yang telah dibuat{% endif %}.
+
+### Menghentikan Services
+
+Untuk menghentikan services di lingkungan mana pun, gunakan perintah `down` yang sesuai.
+
+- **Development:**
+  ```bash
+  docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml down
+  ```
+
+- **Produksi:**
+  ```bash
+  docker compose -f docker-compose.common.yaml -f docker-compose.prod.yaml down
+  ```
+
+## Membuat Project Baru dari Template Ini
+
+Template ini dapat digunakan untuk membuat project Traefik baru dengan mudah menggunakan Copier:
+
+```bash
+# Install Copier jika belum ada
+pip install copier
+
+# Buat project baru
+copier copy /path/to/traefik-toyscation /path/to/new-project
+
+# Atau dari git repository
+copier copy gh:andhit-r/traefik-toyscation /path/to/new-project
+```
+
+Copier akan menanyakan beberapa pertanyaan:
+- Nama project
+- Domain dashboard (development & production)
+- Email untuk Let's Encrypt
+- Versi Traefik
+- Apakah ingin membuat basic auth user
+- Username dan password (jika membuat auth user)
+- Log level
+
+## Update Konfigurasi
+
+Jika Anda ingin mengubah konfigurasi project yang sudah di-generate:
+
+```bash
+# Update dengan menjalankan Copier lagi
+copier update
+
+# Atau edit file .copier-answers.yml dan jalankan
+copier update --force
+```

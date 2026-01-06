@@ -2,10 +2,16 @@
 letsencrypt/acme.json
 acme.json
 
-# Environment files
-*.env
-.env.*
-!.env
+# Environment files - keep templates but ignore generated files
+.env
+!.env.jinja
+
+# Copier answers
+.copier-answers.yml
+
+# Generated files from templates
+docker-compose.common.yaml
+traefik/traefik.yml
 
 # Logs
 *.log

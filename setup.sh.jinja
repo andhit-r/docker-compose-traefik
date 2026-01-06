@@ -1,0 +1,55 @@
+#!/bin/bash
+# Post-generation script untuk Copier template
+
+set -e
+
+echo "🚀 Setting up Traefik project..."
+
+# Buat direktori data jika belum ada
+mkdir -p data
+
+# Buat acme.json dengan permissions yang benar
+touch data/acme.json
+chmod 600 data/acme.json
+echo "✅ Created data/acme.json with correct permissions"
+
+{% if create_auth_user %}
+# Generate usersfile untuk basic auth
+if command -v htpasswd >/dev/null 2>&1; then
+    echo "{{ auth_username }}:$(openssl passwd -apr1 '{{ auth_password }}')" > data/usersfile
+    echo "✅ Created basic auth user: {{ auth_username }}"
+else
+    echo "⚠️  Warning: htpasswd not found. Installing apache2-utils..."
+    if command -v apt-get >/dev/null 2>&1; then
+        sudo apt-get update && sudo apt-get install -y apache2-utils
+        echo "{{ auth_username }}:$(openssl passwd -apr1 '{{ auth_password }}')" > data/usersfile
+        echo "✅ Created basic auth user: {{ auth_username }}"
+    else
+        echo "❌ Could not install htpasswd. Please create data/usersfile manually:"
+        echo "   htpasswd -cb data/usersfile {{ auth_username }} {{ auth_password }}"
+    fi
+fi
+{% else %}
+# Buat usersfile kosong
+touch data/usersfile
+echo "⚠️  No auth user created. You can add one later with:"
+echo "   htpasswd -cb data/usersfile <username> <password>"
+{% endif %}
+
+# Buat direktori dynamic jika belum ada
+mkdir -p traefik/dynamic
+echo "✅ Created traefik/dynamic directory"
+
+echo ""
+echo "✨ Setup complete! Your Traefik project is ready."
+echo ""
+echo "Next steps:"
+echo "1. Review the generated .env file"
+echo "2. For development:"
+echo "   docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml up -d"
+echo "3. For production:"
+echo "   docker compose -f docker-compose.common.yaml -f docker-compose.prod.yaml up -d"
+echo ""
+echo "Dashboard URLs:"
+echo "  Development: http://{{ traefik_dashboard_host_devel }}"
+echo "  Production:  https://{{ traefik_dashboard_host_prod }}"
