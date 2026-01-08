@@ -62,7 +62,6 @@ jobs:
           
           # Check data files (created by setup.sh)
           test -f test-output/data/acme.json || { echo "❌ data/acme.json not found"; exit 1; }
-          test -f test-output/data/usersfile || { echo "❌ data/usersfile not found"; exit 1; }
           
           # Check directories
           test -d test-output/traefik/dynamic || { echo "❌ traefik/dynamic directory not found"; exit 1; }
@@ -127,8 +126,14 @@ jobs:
 
       - name: Validate basic auth user file
         run: |
-          echo "Checking usersfile content..."
+          echo "Checking usersfile for example-answers test..."
           cd test-output
+          
+          # example-answers.yml has create_auth_user: true, so usersfile must exist
+          if [ ! -f data/usersfile ]; then
+            echo "❌ usersfile not found (should exist when create_auth_user=true)"
+            exit 1
+          fi
           
           # Check if usersfile is not empty
           if [ ! -s data/usersfile ]; then

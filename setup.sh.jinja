@@ -30,8 +30,6 @@ else
     fi
 fi
 {% else %}
-# Buat usersfile kosong
-touch data/usersfile
 echo "⚠️  No auth user created. You can add one later with:"
 echo "   htpasswd -cb data/usersfile <username> <password>"
 {% endif %}
