@@ -1,0 +1,282 @@
+name: Test Traefik Template
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+  workflow_dispatch:
+
+jobs:
+  test-template-generation:
+    name: Test Template Generation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout template repository
+        uses: actions/checkout@v4
+        with:
+          path: template
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Copier
+        run: |
+          python -m pip install --upgrade pip
+          pip install copier
+
+      - name: Verify Copier installation
+        run: copier --version
+
+      - name: Generate project from template (with answers file)
+        run: |
+          copier copy template test-output \
+            --data-file template/example-answers.yml \
+            --vcs-ref HEAD \
+            --UNSAFE
+
+      - name: List generated files
+        run: |
+          echo "Generated project structure:"
+          ls -laR test-output/
+
+      - name: Validate core files exist
+        run: |
+          echo "Checking required files..."
+          
+          # Check Docker Compose files
+          test -f test-output/docker-compose.common.yaml || { echo "❌ docker-compose.common.yaml not found"; exit 1; }
+          test -f test-output/docker-compose.devel.yaml || { echo "❌ docker-compose.devel.yaml not found"; exit 1; }
+          test -f test-output/docker-compose.prod.yaml || { echo "❌ docker-compose.prod.yaml not found"; exit 1; }
+          
+          # Check configuration files
+          test -f test-output/.env || { echo "❌ .env not found"; exit 1; }
+          test -f test-output/README.md || { echo "❌ README.md not found"; exit 1; }
+          test -f test-output/.gitignore || { echo "❌ .gitignore not found"; exit 1; }
+          
+          # Check Traefik configuration
+          test -f test-output/traefik/traefik.yml || { echo "❌ traefik/traefik.yml not found"; exit 1; }
+          
+          # Check data files (created by setup.sh)
+          test -f test-output/data/acme.json || { echo "❌ data/acme.json not found"; exit 1; }
+          test -f test-output/data/usersfile || { echo "❌ data/usersfile not found"; exit 1; }
+          
+          # Check directories
+          test -d test-output/traefik/dynamic || { echo "❌ traefik/dynamic directory not found"; exit 1; }
+          
+          echo "✅ All required files exist"
+
+      - name: Validate acme.json permissions
+        run: |
+          echo "Checking acme.json permissions..."
+          PERMS=$(stat -c "%a" test-output/data/acme.json)
+          if [ "$PERMS" != "600" ]; then
+            echo "❌ acme.json has wrong permissions: $PERMS (expected: 600)"
+            exit 1
+          fi
+          echo "✅ acme.json has correct permissions (600)"
+
+      - name: Validate Docker Compose syntax
+        run: |
+          echo "Validating Docker Compose files..."
+          cd test-output
+          
+          # Validate development compose
+          docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml config > /dev/null || {
+            echo "❌ Development compose validation failed"
+            exit 1
+          }
+          echo "✅ Development compose is valid"
+          
+          # Validate production compose
+          docker compose -f docker-compose.common.yaml -f docker-compose.prod.yaml config > /dev/null || {
+            echo "❌ Production compose validation failed"
+            exit 1
+          }
+          echo "✅ Production compose is valid"
+
+      - name: Validate environment variables
+        run: |
+          echo "Checking .env file content..."
+          cd test-output
+          
+          # Check if required variables exist
+          grep -q "TRAEFIK_DASHBOARD_HOST_DEVEL=" .env || { echo "❌ TRAEFIK_DASHBOARD_HOST_DEVEL not found"; exit 1; }
+          grep -q "TRAEFIK_DASHBOARD_HOST_PROD=" .env || { echo "❌ TRAEFIK_DASHBOARD_HOST_PROD not found"; exit 1; }
+          grep -q "TRAEFIK_ACME_EMAIL=" .env || { echo "❌ TRAEFIK_ACME_EMAIL not found"; exit 1; }
+          
+          echo "✅ Environment variables are present"
+
+      - name: Validate Traefik configuration
+        run: |
+          echo "Checking traefik.yml content..."
+          cd test-output
+          
+          # Check key sections exist
+          grep -q "entryPoints:" traefik/traefik.yml || { echo "❌ entryPoints section not found"; exit 1; }
+          grep -q "certificatesResolvers:" traefik/traefik.yml || { echo "❌ certificatesResolvers not found"; exit 1; }
+          grep -q "providers:" traefik/traefik.yml || { echo "❌ providers section not found"; exit 1; }
+          
+          # Check if email is interpolated correctly
+          grep -q "email:" traefik/traefik.yml || { echo "❌ email not found in traefik.yml"; exit 1; }
+          
+          echo "✅ Traefik configuration is valid"
+
+      - name: Validate basic auth user file
+        run: |
+          echo "Checking usersfile content..."
+          cd test-output
+          
+          # Check if usersfile is not empty
+          if [ ! -s data/usersfile ]; then
+            echo "❌ usersfile is empty"
+            exit 1
+          fi
+          
+          # Check if it contains username from example-answers.yml
+          grep -q "admin:" data/usersfile || { echo "❌ admin user not found in usersfile"; exit 1; }
+          
+          echo "✅ Basic auth user file is valid"
+
+      - name: Validate generated README
+        run: |
+          echo "Checking generated README.md..."
+          cd test-output
+          
+          # Check if project name is interpolated
+          grep -q "my-traefik-proxy" README.md || { echo "❌ Project name not found in README"; exit 1; }
+          
+          # Check if it contains expected sections
+          grep -q "Quick Start" README.md || { echo "❌ Quick Start section not found"; exit 1; }
+          
+          echo "✅ Generated README is valid"
+
+      - name: Test with custom answers
+        run: |
+          echo "Testing with custom answers..."
+          
+          # Create custom answers file
+          cat > custom-answers.yml <<EOF
+          project_name: test-custom-project
+          traefik_dashboard_host_devel: custom.localhost
+          traefik_dashboard_host_prod: custom.example.com
+          traefik_acme_email: test@example.com
+          traefik_version: v2.11
+          create_auth_user: false
+          log_level: DEBUG
+          EOF
+          
+          # Generate with custom answers
+          copier copy template test-custom \
+            --data-file custom-answers.yml \
+            --vcs-ref HEAD \
+            --UNSAFE
+          
+          # Validate custom values
+          grep -q "test-custom-project" test-custom/README.md || { echo "❌ Custom project name not found"; exit 1; }
+          grep -q "custom.localhost" test-custom/.env || { echo "❌ Custom dev domain not found"; exit 1; }
+          grep -q "test@example.com" test-custom/traefik/traefik.yml || { echo "❌ Custom email not found"; exit 1; }
+          
+          # Check that usersfile was NOT created (since create_auth_user=false)
+          if [ -f test-custom/data/usersfile ]; then
+            echo "❌ usersfile should not exist when create_auth_user=false"
+            exit 1
+          fi
+          
+          echo "✅ Custom answers test passed"
+
+      - name: Upload generated artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: generated-projects
+          path: |
+            test-output/
+            test-custom/
+          retention-days: 5
+
+      - name: Summary
+        if: success()
+        run: |
+          echo "## ✅ Template Validation Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All tests passed successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Files Validated:" >> $GITHUB_STEP_SUMMARY
+          echo "- Docker Compose configurations ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Traefik configuration ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Environment variables ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Basic auth setup ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- File permissions ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Custom answers ✅" >> $GITHUB_STEP_SUMMARY
+
+  test-from-github:
+    name: Test Template from GitHub
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Copier
+        run: |
+          python -m pip install --upgrade pip
+          pip install copier
+
+      - name: Get repository info
+        id: repo
+        run: |
+          echo "url=https://github.com/${{ github.repository }}.git" >> $GITHUB_OUTPUT
+          echo "ref=${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Test copying from GitHub URL
+        run: |
+          echo "Testing template from GitHub URL..."
+          echo "Repository: ${{ steps.repo.outputs.url }}"
+          echo "Commit: ${{ steps.repo.outputs.ref }}"
+          
+          # Create test answers
+          cat > github-test-answers.yml <<EOF
+          project_name: github-test
+          traefik_dashboard_host_devel: github.localhost
+          traefik_dashboard_host_prod: github.example.com
+          traefik_acme_email: github-test@example.com
+          traefik_version: v2.11
+          create_auth_user: true
+          auth_username: admin
+          auth_password: test123
+          log_level: INFO
+          EOF
+          
+          # Copy from GitHub URL
+          copier copy "${{ steps.repo.outputs.url }}" github-output \
+            --data-file github-test-answers.yml \
+            --vcs-ref "${{ steps.repo.outputs.ref }}" \
+            --UNSAFE
+
+      - name: Validate GitHub-sourced generation
+        run: |
+          echo "Validating project generated from GitHub..."
+          
+          # Basic validation
+          test -f github-output/docker-compose.common.yaml || { echo "❌ Files not generated"; exit 1; }
+          test -f github-output/traefik/traefik.yml || { echo "❌ Traefik config not generated"; exit 1; }
+          
+          grep -q "github-test" github-output/README.md || { echo "❌ Project name not interpolated"; exit 1; }
+          
+          echo "✅ GitHub-sourced template generation successful"
+
+      - name: Upload GitHub-sourced artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: github-sourced-project
+          path: github-output/
+          retention-days: 5
