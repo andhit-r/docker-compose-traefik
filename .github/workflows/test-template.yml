@@ -150,7 +150,9 @@ jobs:
           grep -q "my-traefik-proxy" README.md || { echo "❌ Project name not found in README"; exit 1; }
           
           # Check if it contains expected sections
-          grep -q "Quick Start" README.md || { echo "❌ Quick Start section not found"; exit 1; }
+          grep -q "Prasyarat" README.md || { echo "❌ Prasyarat section not found"; exit 1; }
+          grep -q "Struktur Proyek" README.md || { echo "❌ Struktur Proyek section not found"; exit 1; }
+          grep -q "Cara Menjalankan" README.md || { echo "❌ Cara Menjalankan section not found"; exit 1; }
           
           echo "✅ Generated README is valid"
 
