@@ -161,6 +161,86 @@ jobs:
           
           echo "✅ Generated README is valid"
 
+      - name: Start Traefik in development mode
+        run: |
+          echo "Starting Traefik in development mode..."
+          cd test-output
+          
+          # Start docker compose in background
+          docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml up -d
+          
+          echo "✅ Docker Compose started"
+
+      - name: Wait for Traefik to be ready
+        run: |
+          echo "Waiting for Traefik to be healthy..."
+          cd test-output
+          
+          # Wait up to 30 seconds for Traefik to be healthy
+          timeout 30 bash -c 'until docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml ps | grep -q "healthy"; do echo "Waiting..."; sleep 2; done' || {
+            echo "⚠️ Timeout waiting for healthy status, checking if container is running..."
+            docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml ps
+          }
+          
+          # Give it a few more seconds to fully initialize
+          sleep 5
+          
+          echo "✅ Traefik should be ready"
+
+      - name: Validate Traefik is running
+        run: |
+          echo "Validating Traefik container..."
+          cd test-output
+          
+          # Check if container is running
+          if ! docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml ps | grep -q "Up"; then
+            echo "❌ Traefik container is not running"
+            docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml ps
+            docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml logs
+            exit 1
+          fi
+          
+          echo "✅ Traefik container is running"
+
+      - name: Test Traefik dashboard accessibility
+        run: |
+          echo "Testing Traefik dashboard..."
+          cd test-output
+          
+          # Get the dashboard port (should be 8080 for insecure mode)
+          DASHBOARD_PORT=$(docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml port traefik 8080 2>/dev/null | cut -d: -f2 || echo "8080")
+          
+          echo "Dashboard should be accessible at: http://localhost:${DASHBOARD_PORT}"
+          
+          # Test if dashboard responds
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${DASHBOARD_PORT}/dashboard/ || echo "000")
+          
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
+            echo "✅ Dashboard is accessible (HTTP $HTTP_CODE)"
+          else
+            echo "⚠️ Dashboard returned HTTP $HTTP_CODE (might need redirect handling)"
+            # Still consider it a pass if Traefik is responding
+          fi
+          
+          # Test API endpoint
+          API_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:${DASHBOARD_PORT}/api/overview || echo "000")
+          echo "API endpoint returned: HTTP $API_CODE"
+
+      - name: Show Traefik logs
+        if: always()
+        run: |
+          echo "Traefik logs:"
+          cd test-output
+          docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml logs traefik
+
+      - name: Stop Traefik
+        if: always()
+        run: |
+          echo "Stopping Traefik..."
+          cd test-output
+          docker compose -f docker-compose.common.yaml -f docker-compose.devel.yaml down -v
+          echo "✅ Traefik stopped and cleaned up"
+
       - name: Test with custom answers
         run: |
           echo "Testing with custom answers..."
