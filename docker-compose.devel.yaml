@@ -10,4 +10,12 @@ services:
       - "traefik.http.routers.traefik-local.rule=Host(`${TRAEFIK_DASHBOARD_HOST_DEVEL}`)"  # Dashboard via domain lokal
       - "traefik.http.routers.traefik-local.entrypoints=web"  # Gunakan entrypoint HTTP
       - "traefik.http.routers.traefik-local.service=api@internal"  # Gunakan service internal untuk dashboard
+
+      # Redirect HTTPS ke HTTP untuk dashboard lokal
+      - "traefik.http.routers.traefik-local-https-redirect.rule=Host(`${TRAEFIK_DASHBOARD_HOST_DEVEL}`)"
+      - "traefik.http.routers.traefik-local-https-redirect.entrypoints=websecure"
+      - "traefik.http.routers.traefik-local-https-redirect.middlewares=redirect-to-http"
+      - "traefik.http.routers.traefik-local-https-redirect.service=api@internal"
+      - "traefik.http.middlewares.redirect-to-http.redirectscheme.scheme=http"
+      - "traefik.http.middlewares.redirect-to-http.redirectscheme.permanent=true"
       - traefik.docker.network=traefik-public
