@@ -12,6 +12,14 @@ services:
       - "traefik.http.routers.traefik-prod.tls=true"
       - "traefik.http.routers.traefik-prod.tls.certresolver=letsencrypt"
 
+      # Redirect HTTP ke HTTPS untuk dashboard
+      - "traefik.http.routers.traefik-prod-https-redirect.rule=Host(`${TRAEFIK_DASHBOARD_HOST_PROD}`)"
+      - "traefik.http.routers.traefik-prod-https-redirect.entrypoints=web"
+      - "traefik.http.routers.traefik-prod-https-redirect.middlewares=redirect-to-https"
+      - "traefik.http.routers.traefik-prod-https-redirect.service=api@internal"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+
       # Basic Auth Middleware
       - "traefik.http.routers.traefik-prod.middlewares=auth"
       - "traefik.http.middlewares.auth.basicauth.usersfile=/etc/traefik/usersfile"
